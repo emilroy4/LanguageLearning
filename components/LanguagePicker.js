@@ -14,6 +14,9 @@ const LanguagePicker = ({ selectedLanguage, setSelectedLanguage }) => {
         <Picker.Item label="English" value="en" />
         <Picker.Item label="Spanish" value="es" />
         <Picker.Item label="French" value="fr" />
+        <Picker.Item label="Japanese" value="ja" />
+        <Picker.Item label="Chinese" value="zh" />
+        <Picker.Item label="Korean" value="ko" />
       </Picker>
     </View>
   );

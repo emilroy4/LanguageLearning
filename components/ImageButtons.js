@@ -6,53 +6,52 @@ import { API_KEY } from '@env';  // Import the API key from .env
 import TranslationModal from './TranslationModal';  // Ensure you have the TranslationModal component
 
 const ImageButtons = ({ setImage, setTranslatedText, setModalVisible, selectedLanguage }) => {
-  const [imageUri, setImageUri] = React.useState(null);  // To store the image URI
+  const [imageUri, setImageUri] = React.useState(null);
   const [translatedText, setTranslatedTextState] = React.useState('');
   const [romanizedText, setRomanizedText] = React.useState('');
   const [description, setDescription] = React.useState('');
   const [modalVisible, setModalVisibleState] = React.useState(false);
 
-  // Function to process the image with Google Vision API
   const processImage = async (imageUri) => {
     console.log('Processing image...');
     const image = await fetch(imageUri);
     const imageBlob = await image.blob();
     const reader = new FileReader();
-
+  
     reader.onloadend = async () => {
-      const base64Image = reader.result.split(',')[1];  // Get the base64 string
-      console.log('Base64 Image:', base64Image.slice(0, 100));  // Log first 100 characters
-
+      const base64Image = reader.result.split(',')[1];
+      console.log('Base64 Image:', base64Image.slice(0, 100));
+  
       try {
-        // Step 1: Recognize the object using Google Vision API
         const response = await axios.post(
-          `https://vision.googleapis.com/v1/images:annotate?key=${API_KEY}`,  // Use the imported API key
+          `https://vision.googleapis.com/v1/images:annotate?key=${API_KEY}`,
           {
             requests: [
               {
-                image: { content: base64Image },  // Send the base64 image content
-                features: [{ type: 'LABEL_DETECTION', maxResults: 1 }],
+                image: { content: base64Image },
+                features: [{ type: 'LABEL_DETECTION', maxResults: 5 }], 
               },
             ],
           }
         );
-
-        const objectName = response.data.responses[0].labelAnnotations[0].description;
-        console.log('Recognized Object:', objectName);
-
-        // Step 2: Translate the recognized object using Google Translate API
+  
+        const labels = response.data.responses[0].labelAnnotations;
+        console.log('Recognized Labels:', labels);
+  
+        const objectName = labels[0]?.description;  // Get the first recognized label
+        console.log('Chosen Object:', objectName);
+  
         await translateObject(objectName);
         
       } catch (error) {
         console.error('Error processing image:', error);
-        console.log('Response data:', error.response?.data);  // Log additional error data
+        console.log('Response data:', error.response?.data);
       }
     };
-
-    reader.readAsDataURL(imageBlob);  // Read the image blob as base64
+  
+    reader.readAsDataURL(imageBlob);
   };
-
-  // Function to translate the recognized object and format the output
+  
   const translateObject = async (objectName) => {
     const targetLanguage = selectedLanguage;
   
@@ -67,15 +66,13 @@ const ImageButtons = ({ setImage, setTranslatedText, setModalVisible, selectedLa
   
       const translatedText = response.data.data.translations[0].translatedText;
       let romanizedText = '';
-  
-      // Romanization logic (for languages that support romanization)
-      if (['ko', 'ja', 'zh'].includes(targetLanguage)) {
-        romanizedText = getRomanization(objectName, targetLanguage);  // Use your romanization function here
+
+      // Check for romanization support
+      if (['ja', 'ko', 'zh'].includes(targetLanguage)) {
+        romanizedText = await getRomanization(objectName, targetLanguage);
       }
 
-      const description = objectName;  // Use the recognized object as the description
-
-      // Set the values for the modal
+      const description = objectName;
       setTranslatedTextState(translatedText);
       setRomanizedText(romanizedText);
       setDescription(description);
@@ -85,37 +82,35 @@ const ImageButtons = ({ setImage, setTranslatedText, setModalVisible, selectedLa
     }
   };
 
-  // Placeholder function to get romanization if necessary
-  const getRomanization = (objectName, language) => {
-    // Implement your romanization logic here. This is a placeholder.
+  const getRomanization = async (objectName, language) => {
+    // Call a suitable API or function to get romanization
+    // This is a placeholder for the actual implementation
     if (language === 'ja') {
       return "megane";  // Example: Romanization for "glasses" in Japanese
     }
-    // Add logic for other languages if necessary
-    return '';  // Return empty if no romanization is available
+    // Add logic for other languages with proper romanization API calls
+    return '';
   };
 
-  // Image picker from gallery
   const pickImage = async () => {
     console.log('Opening image picker...');
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.All,
       allowsEditing: true,
       aspect: [4, 3],
-      quality: 1,
+      quality: 0.5,
     });
 
     if (result.assets && result.assets.length > 0) {
       const imageUri = result.assets[0].uri;
-      setImageUri(imageUri);  // Store the image URI for modal
-      console.log('Image selected:', imageUri);  // Log the image URI
+      setImageUri(imageUri);
+      console.log('Image selected:', imageUri);
       await processImage(imageUri);
     } else {
       console.log('No image selected');
     }
   };
 
-  // Image picker from camera
   const takePhoto = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
@@ -132,8 +127,8 @@ const ImageButtons = ({ setImage, setTranslatedText, setModalVisible, selectedLa
 
     if (result.assets && result.assets.length > 0) {
       const imageUri = result.assets[0].uri;
-      setImageUri(imageUri);  // Store the image URI for modal
-      console.log('Photo taken:', imageUri);  // Log the photo URI
+      setImageUri(imageUri);
+      console.log('Photo taken:', imageUri);
       await processImage(imageUri);
     } else {
       console.log('No photo taken');
@@ -149,7 +144,6 @@ const ImageButtons = ({ setImage, setTranslatedText, setModalVisible, selectedLa
         <Text style={styles.buttonText}>Take a Photo</Text>
       </TouchableOpacity>
 
-      {/* Translation Modal */}
       <TranslationModal
         modalVisible={modalVisible}
         setModalVisible={setModalVisibleState}
@@ -162,7 +156,6 @@ const ImageButtons = ({ setImage, setTranslatedText, setModalVisible, selectedLa
   );
 };
 
-// Styles for the buttons and container
 const styles = StyleSheet.create({
   buttonContainer: {
     flexDirection: 'row',
