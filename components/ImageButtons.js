@@ -3,9 +3,14 @@ import { TouchableOpacity, Text, StyleSheet, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import axios from 'axios';
 import { API_KEY } from '@env';  // Import the API key from .env
+import TranslationModal from './TranslationModal';  // Ensure you have the TranslationModal component
 
 const ImageButtons = ({ setImage, setTranslatedText, setModalVisible, selectedLanguage }) => {
-
+  const [imageUri, setImageUri] = React.useState(null);  // To store the image URI
+  const [translatedText, setTranslatedTextState] = React.useState('');
+  const [romanizedText, setRomanizedText] = React.useState('');
+  const [description, setDescription] = React.useState('');
+  const [modalVisible, setModalVisibleState] = React.useState(false);
 
   // Function to process the image with Google Vision API
   const processImage = async (imageUri) => {
@@ -49,40 +54,32 @@ const ImageButtons = ({ setImage, setTranslatedText, setModalVisible, selectedLa
 
   // Function to translate the recognized object and format the output
   const translateObject = async (objectName) => {
-    console.log('Translating object...');
     const targetLanguage = selectedLanguage;
-
+  
     try {
-      // Step 3: Use Google Translate API to translate the object name
       const response = await axios.post(
-        `https://translation.googleapis.com/language/translate/v2?key=${API_KEY}`,  // Use the imported API key
+        `https://translation.googleapis.com/language/translate/v2?key=${API_KEY}`,
         {
           q: objectName,
           target: targetLanguage,
         }
       );
-
+  
       const translatedText = response.data.data.translations[0].translatedText;
-      console.log('Translated Object:', translatedText);
-
-      // Step 4: Check if the language has romanization (custom logic for supported languages)
       let romanizedText = '';
+  
+      // Romanization logic (for languages that support romanization)
       if (['ko', 'ja', 'zh'].includes(targetLanguage)) {
-        romanizedText = getRomanization(objectName, targetLanguage);  // Get romanization if needed
+        romanizedText = getRomanization(objectName, targetLanguage);  // Use your romanization function here
       }
 
-      // Step 5: Format the response to display translated text and optional romanization
-      let formattedResponse = `${translatedText}`;
-      if (romanizedText) {
-        formattedResponse += `\n(${romanizedText})`;  // Add romanization in parentheses
-      }
+      const description = objectName;  // Use the recognized object as the description
 
-      console.log('Formatted Response:', formattedResponse);
-
-      // Step 6: Show the formatted response in the modal
-      setTranslatedText(formattedResponse);
-      setModalVisible(true);
-
+      // Set the values for the modal
+      setTranslatedTextState(translatedText);
+      setRomanizedText(romanizedText);
+      setDescription(description);
+      setModalVisibleState(true);
     } catch (error) {
       console.error('Error translating text:', error);
     }
@@ -90,10 +87,12 @@ const ImageButtons = ({ setImage, setTranslatedText, setModalVisible, selectedLa
 
   // Placeholder function to get romanization if necessary
   const getRomanization = (objectName, language) => {
+    // Implement your romanization logic here. This is a placeholder.
     if (language === 'ja') {
-      return "megane";  // Example of Japanese romanization for "glasses"
+      return "megane";  // Example: Romanization for "glasses" in Japanese
     }
-    return '';  // Return empty string if no romanization available
+    // Add logic for other languages if necessary
+    return '';  // Return empty if no romanization is available
   };
 
   // Image picker from gallery
@@ -108,7 +107,7 @@ const ImageButtons = ({ setImage, setTranslatedText, setModalVisible, selectedLa
 
     if (result.assets && result.assets.length > 0) {
       const imageUri = result.assets[0].uri;
-      setImage(imageUri);
+      setImageUri(imageUri);  // Store the image URI for modal
       console.log('Image selected:', imageUri);  // Log the image URI
       await processImage(imageUri);
     } else {
@@ -133,7 +132,7 @@ const ImageButtons = ({ setImage, setTranslatedText, setModalVisible, selectedLa
 
     if (result.assets && result.assets.length > 0) {
       const imageUri = result.assets[0].uri;
-      setImage(imageUri);
+      setImageUri(imageUri);  // Store the image URI for modal
       console.log('Photo taken:', imageUri);  // Log the photo URI
       await processImage(imageUri);
     } else {
@@ -149,6 +148,16 @@ const ImageButtons = ({ setImage, setTranslatedText, setModalVisible, selectedLa
       <TouchableOpacity style={styles.button} onPress={takePhoto}>
         <Text style={styles.buttonText}>Take a Photo</Text>
       </TouchableOpacity>
+
+      {/* Translation Modal */}
+      <TranslationModal
+        modalVisible={modalVisible}
+        setModalVisible={setModalVisibleState}
+        translatedText={translatedText}
+        romanizedText={romanizedText}
+        description={description}
+        image={imageUri}
+      />
     </View>
   );
 };

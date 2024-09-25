@@ -1,19 +1,41 @@
 import React from 'react';
-import { Modal, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { Modal, View, Text, TouchableOpacity, Image, StyleSheet } from 'react-native';
 
-const TranslationModal = ({ modalVisible, setModalVisible, translatedText }) => {
+const TranslationModal = ({ modalVisible, setModalVisible, translatedText, romanizedText, description, image }) => {
   return (
     <Modal
       animationType="slide"
       transparent={true}
       visible={modalVisible}
-      onRequestClose={() => setModalVisible(!modalVisible)}
+      onRequestClose={() => setModalVisible(false)}
     >
-      <View style={styles.modalContainer}>
+      <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
-          <Text style={styles.modalText}>Translation: {translatedText}</Text>
-          <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(!modalVisible)}>
-            <Text style={styles.buttonText}>Close</Text>
+          {/* Image at the top */}
+          {image && (
+            <Image source={{ uri: image }} style={styles.image} />
+          )}
+
+          {/* Translated Text */}
+          <Text style={styles.translatedText}>
+            {translatedText}
+          </Text>
+
+          {/* Romanized Text */}
+          {romanizedText ? (
+            <Text style={styles.romanizedText}>
+              ({romanizedText})
+            </Text>
+          ) : null}
+
+          {/* Description */}
+          <Text style={styles.descriptionText}>
+            {description}
+          </Text>
+
+          {/* Close Button */}
+          <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
+            <Text style={styles.closeButtonText}>Close</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -21,34 +43,56 @@ const TranslationModal = ({ modalVisible, setModalVisible, translatedText }) => 
   );
 };
 
+// Styles for the modal
 const styles = StyleSheet.create({
-  modalContainer: {
+  modalOverlay: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',  // Dark overlay
   },
   modalContent: {
     backgroundColor: '#fff',
+    borderRadius: 10,
     padding: 20,
-    borderRadius: 8,
     width: '80%',
     alignItems: 'center',
   },
-  modalText: {
-    fontSize: 18,
-    marginBottom: 20,
+  image: {
+    width: 150,
+    height: 150,
+    borderRadius: 8,
+    marginBottom: 15,
+  },
+  translatedText: {
+    fontSize: 24,
+    fontWeight: 'bold',
     color: '#333',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  romanizedText: {
+    fontSize: 18,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  descriptionText: {
+    fontSize: 16,
+    color: '#888',
+    textAlign: 'center',
+    marginBottom: 20,
   },
   closeButton: {
-    backgroundColor: '#dc3545',
-    padding: 12,
-    borderRadius: 8,
+    backgroundColor: '#d9534f',
+    padding: 10,
+    borderRadius: 5,
+    width: '80%',
+    alignItems: 'center',
   },
-  buttonText: {
+  closeButtonText: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: '600',
   },
 });
 
